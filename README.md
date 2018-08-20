@@ -43,9 +43,21 @@ with the last column being the petrophysical attribute, e.g. permeability
 *  *__NuSVR__*  Support Vector Machines Regression
 
 ###  Classification
-   Below are various classification models that can be used:
+   _Below are various classification models that can be used:_
 *  *__LogisticRegression__*
 *  *__GaussianNaiveBayes__*
 *  *__CatBoostClassification__*
-*  *__NuSVC__*  Support Vector Machines Classification 
+*  *__NuSVC__*  Support Vector Machines Classification  
+*  *__QDA__*   Quadratic Discriminant Analysis
+*  *__GMM__*   Gaussian Mixture Model
+
+###  SemiSupervised Learning  
+
+###  Imbalanced Classification  
+_Most of our data is imbalanced. These correction techniques apply to all classification models_
+*  *__ROS__*     Random oversampling
+*  *__SMOTE__*   Synthetic Minority Oversampling
+*  *__ADASYN__*  Adaptive Synthetic Sampling
+
+
 
