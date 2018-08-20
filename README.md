@@ -41,6 +41,7 @@ with the last column being the petrophysical attribute, e.g. permeability
 *  *__KNN__* : K Nearest Neighbors.   
 *  *__CatBoostRegression__*      
 *  *__NuSVR__*  Support Vector Machines Regression
+*  *__ANN__*  Regression Artificial Neural Network using *__Keras__*
 
 ###  Classification
    _Below are various classification models that can be used:_
@@ -50,6 +51,7 @@ with the last column being the petrophysical attribute, e.g. permeability
 *  *__NuSVC__*  Support Vector Machines Classification  
 *  *__QDA__*   Quadratic Discriminant Analysis
 *  *__GMM__*   Gaussian Mixture Model
+*  *__ANN__*  Classification Artificial Neural Network using *__Keras__*
 
 ###  SemiSupervised Learning  
 
