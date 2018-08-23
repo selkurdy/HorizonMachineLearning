@@ -883,9 +883,13 @@ def process_prepfile(csvfile,cmdloutdir=None):
                 outdir = cmdloutdir,
                 ssuffix = '_w')
 
-def process_sscalecols(csvfile,cmdlxyzcols=None,
+def process_sscalecols(csvfile,cmdlxyzcols=None,cmdlincludexyz=False,
                 cmdlkind=None,cmdloutdir=None):
     allattrib = pd.read_csv(csvfile)
+    if cmdlincludexyz:
+        allattrib['Xscaled'] = allattrib[allattrib.columns[cmdlxyzcols[0]]]
+        allattrib['Yscaled'] = allattrib[allattrib.columns[cmdlxyzcols[1]]]
+        allattrib['Zscaled'] = allattrib[allattrib.columns[cmdlxyzcols[1]]]
     if allattrib.isnull().values.any():
         print('Warning: Null Values in the file will be dropped')
         allattrib.dropna(inplace=True)
@@ -902,10 +906,17 @@ def process_sscalecols(csvfile,cmdlxyzcols=None,
     allattribsdf = pd.DataFrame(allattribs,columns=cols)
     allattribsxy = pd.concat([xyzcols,allattribsdf],axis=1)
 
-    savefiles(seisf = csvfile,
-                sdf = allattribsxy,
-                outdir = cmdloutdir,
-                ssuffix = '_ss')
+    if cmdlincludexyz:
+        savefiles(seisf = csvfile,
+                    sdf = allattribsxy,
+                    outdir = cmdloutdir,
+                    ssuffix = '_ssxyz')
+    else:
+        savefiles(seisf = csvfile,
+                        sdf = allattribsxy,
+                        outdir = cmdloutdir,
+                        ssuffix = '_ss')
+
 
 def process_listcsvcols(csvfile):
     data =pd.read_csv(csvfile)
@@ -5076,6 +5087,8 @@ def getcommandline(*oneline):
     sscaleparser.add_argument('csvfile',help='csv file to scale columns')
     sscaleparser.add_argument('--xyzcols',type=int,default=[0,1,2],nargs=3,
                         help='X Y Z columns to remove before scaling and add back after. default = 0 1 2')
+    sscaleparser.add_argument('--includexyz',action='store_true',default=False,
+        help='Include x y z columns in scaling. default=False')
     sscaleparser.add_argument('--kind',choices=['standard','quniform','qnormal'],default='standard',
                         help='Scaling kind: Standard, quantile uniform, or quantile normal. default=standard')
     sscaleparser.add_argument('--outdir',help='output directory,default= same dir as input')
@@ -5801,9 +5814,10 @@ def main():
             process_listcsvcols(cmdl.csvfile)
 
         elif cmdl.which =='sscalecols':
-            process_sscalecols(cmdl.csvfile,cmdlxyzcols=cmdl.xyzcols,
+            process_sscalecols(cmdl.csvfile,cmdlxyzcols=cmdl.xyzcols,cmdlincludexyz=cmdl.includexyz,
                             cmdlkind=cmdl.kind,cmdloutdir=cmdl.outdir)
-
+            # includexyz is an option to use xyz columns as predictors. default is to drop them
+            # they are appended to the data file before scaling.
         elif cmdl.which =='wscalecols':
             process_wscalecols(cmdl.csvfile,cmdlwxyzcols=cmdl.wxyzcols,cmdloutdir=cmdl.outdir)
 
