@@ -889,7 +889,7 @@ def process_sscalecols(csvfile,cmdlxyzcols=None,cmdlincludexyz=False,
     if cmdlincludexyz:
         allattrib['Xscaled'] = allattrib[allattrib.columns[cmdlxyzcols[0]]]
         allattrib['Yscaled'] = allattrib[allattrib.columns[cmdlxyzcols[1]]]
-        allattrib['Zscaled'] = allattrib[allattrib.columns[cmdlxyzcols[1]]]
+        allattrib['Zscaled'] = allattrib[allattrib.columns[cmdlxyzcols[2]]]
     if allattrib.isnull().values.any():
         print('Warning: Null Values in the file will be dropped')
         allattrib.dropna(inplace=True)
