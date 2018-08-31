@@ -290,6 +290,11 @@ try:
 except ImportError:
     print('***Warning:imblearn is not installed')
 
+try:
+    import umap
+except ImportError:
+    print('***Warning: umap is not installed')
+
 
 def module_exists(module_name):
     try:
@@ -4942,6 +4947,80 @@ def process_tSNE2(cmdlwellattribcsv,cmdlseisattribcsv,
 
 
 
+def process_umap(cmdlallattribcsv,
+                cmdlcolsrange=None,
+                cmdlcols2cluster=None,
+                cmdlsample=None,
+                cmdlxyzcols=None,
+                cmdlnneighbors=None,
+                cmdlmindistance=0.3,
+                cmdlncomponents=3,
+                cmdlscalefeatures =True,
+                cmdloutdir=None,
+                cmdlhideplot=None):
+
+
+    swa = pd.read_csv(cmdlallattribcsv)
+    swaxx = swa.sample(frac=cmdlsample).copy()
+    if cmdlcolsrange:
+        print('Attrib From col# %d to col %d' %(cmdlcolsrange[0],cmdlcolsrange[1]))
+        swax = swaxx[swaxx.columns[cmdlcolsrange[0]: cmdlcolsrange[1]+1]]
+    else:
+        swax = swaxx[swaxx.columns[cmdlcols2cluster]]
+
+    xyzc = swaxx[swaxx.columns[cmdlxyzcols]].copy()
+
+    clustering = umap.UMAP(n_neighbors=5, min_dist=0.3, n_components=3)
+
+    start_time = datetime.now()
+    umap_features = clustering.fit_transform(swax)
+    end_time = datetime.now()
+    print('Duration: {}'.format(end_time - start_time))
+
+
+
+
+    dirsplit,fextsplit= os.path.split(cmdlallattribcsv)
+    fname,fextn= os.path.splitext(fextsplit)
+    if cmdloutdir:
+        pdfcl = os.path.join(cmdloutdir,fname) +"_umap.pdf"
+    else:
+        pdfcl = os.path.join(dirsplit,fname) +"_umap.pdf"
+    fig, ax = plt.subplots(figsize=(8,6))
+
+    ax.scatter(umap_features[:,0],umap_features[:,1],s=2,alpha=.2)
+    ax.scatter(umap_features[:,1],umap_features[:,2],s=2,alpha=.2)
+    ax.scatter(umap_features[:,2],umap_features[:,0],s=2,alpha=.2)
+
+    if not cmdlhideplot:
+        plt.show()
+    fig.savefig(pdfcl)
+
+    umapscaled = StandardScaler().fit_transform(umap_features)
+    if cmdlscalefeatures:
+        swaxx['umap0s'] = umapscaled[:,0]
+        swaxx['umap1s'] = umapscaled[:,1]
+        swaxx['umap2s'] = umapscaled[:,2]
+        xyzc['umap0s'] =   umapscaled[:,0]
+        xyzc['umap1s'] =   umapscaled[:,1]
+        xyzc['umap2s'] =   umapscaled[:,2]
+    else:
+        swaxx['umap0'] = umap_features[:,0]
+        swaxx['umap1'] = umap_features[:,1]
+        swaxx['umap2'] = umap_features[:,2]
+        xyzc['umap0'] =  umap_features[:,0]
+        xyzc['umap1'] =  umap_features[:,1]
+        xyzc['umap2'] =  umap_features[:,2]
+
+    savefiles(seisf = cmdlallattribcsv,
+                sdf = swaxx, sxydf = xyzc,
+                outdir = cmdloutdir,
+                ssuffix ='_umap')
+
+
+
+
+
 
 
 def process_semisupervised(wfname,sfname,cmdlwcolsrange=None,
@@ -5042,7 +5121,7 @@ def getcommandline(*oneline):
                 'EDA','linreg','featureranking','linfitpredict','KNNtest','KNNfitpredict','CatBoostRegressor',
                 'CatBoostClassifier','testCmodels','logisticreg','GaussianNaiveBayes','clustertest','clustering',
                 'tSNE','tSNE2','TuneCatBoostClassifier','TuneCatBoostRegressor','DBSCAN','wscaletarget','semisupervised',
-                'GaussianMixtureModel','ANNRegressor','NuSVR','NuSVC','SGDR','QuadraticDiscriminantAnalysis']
+                'GaussianMixtureModel','ANNRegressor','NuSVR','NuSVC','SGDR','QuadraticDiscriminantAnalysis','umap']
 
     mainparser = argparse.ArgumentParser(description='Seismic and Well Attributes Modeling.')
     mainparser.set_defaults(which=None)
@@ -5742,6 +5821,26 @@ def getcommandline(*oneline):
 
 
 
+    umapparser = subparser.add_parser('umap',help='Clustering using UMAP (Uniform Manifold Approximation & Projection) to one csv')
+    umapparser.set_defaults(which='umap')
+    umapparser.add_argument('allattribcsv',help='csv file will all attributes')
+    umapparser.add_argument('--cols2cluster',type=int,nargs='+',default=[3,4,5],help='Columns to use for clustering. default= 3 4 5 ')
+    umapparser.add_argument('--colsrange',type=int,nargs=2,default=None,help='analysis min max col #')
+    umapparser.add_argument('--xyzcols',type=int,nargs='+',default=[0,1,2],help='Attribute csv x y z columns  . default= 0 1 2 ')
+    umapparser.add_argument('--nneighbors',type=int,default=5,help='Nearest neighbors. default=5')
+    umapparser.add_argument('--mindistance',type=float,default=0.3,help='Min distantce for clustering. default=0.3')
+    umapparser.add_argument('--ncomponents',type=int,default=3,help='Projection axes. default=3')
+    umapparser.add_argument('--sample',type=float,default=1,help='fraction of data of sample 0 -> 1.default=1, no sampling')
+    umapparser.add_argument('--scalefeatures',action='store_false',default=True,
+                    help='Do not scale umap features. default = to scale featues')
+    umapparser.add_argument('--outdir',help='output directory,default= same dir as input')
+    umapparser.add_argument('--hideplot',action='store_true',default=False,
+                        help='Only save to pdf. default =show and save')
+
+
+
+
+
 
 
     dbsnparser = subparser.add_parser('DBSCAN',help='Apply DBSCAN (Density Based Spatial Aanalysis with Noise) clustering')
@@ -6428,6 +6527,23 @@ def main():
                             cmdlscalefeatures = cmdl.scalefeatures,
                             cmdloutdir=cmdl.outdir,
                             cmdlhideplot=cmdl.hideplot)
+
+
+        elif cmdl.which == 'umap':
+            process_umap(cmdl.allattribcsv,
+                            cmdlcolsrange=cmdl.colsrange,
+                            cmdlcols2cluster=cmdl.cols2cluster,
+                            cmdlsample=cmdl.sample,
+                            cmdlxyzcols=cmdl.xyzcols,
+                            cmdlnneighbors=cmdl.nneighbors,
+                            cmdlmindistance=cmdl.mindistance,
+                            cmdlncomponents=cmdl.ncomponents,
+                            cmdlscalefeatures = cmdl.scalefeatures,
+                            cmdloutdir=cmdl.outdir,
+                            cmdlhideplot=cmdl.hideplot)
+
+
+
 
 
 
