@@ -32,7 +32,10 @@ with the last column being the petrophysical attribute, e.g. permeability
 ####  Clustering  
 *  *__KMEANS__* is first tested to identify the optimum number of clusters  
 *  Once the optimum of clusters are found then *__KMEANS__* is applied to the predictors
-*  The resulting clusters are then one hot encoded to be added as predictors for further model fitting
+*  The resulting clusters are then one hot encoded to be added as predictors for further model fitting  
+*  *__tSNE__* t distribution stochastic neighbor embedding. Attempts to project all your attributes to  2 components
+*  *__umap__* Uniform manifold approximation and projection. A powerful clustering technique to project data on to 2 or 3   
+components 
     
 ####  Regression
     Below are the various regression techniques that can be applied  
