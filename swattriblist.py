@@ -4615,7 +4615,7 @@ def process_clustering(cmdlallattribcsv,cmdlcolsrange=None,
         swatxt['Class']= ylabels
     elif cmdladdclass == 'dummies':
         classlabels = pd.Series(ylabels)
-        classdummies = pd.get_dummies(classlabels,prefix='Class')
+        classdummies = pd.get_dummies(classlabels,prefix='Cluster')
         swatxt = pd.concat([swatxt,classdummies],axis = 1)
 
     if cmdladdclass == 'labels':
@@ -4962,6 +4962,7 @@ def process_umap(cmdlallattribcsv,
 
     swa = pd.read_csv(cmdlallattribcsv)
     swaxx = swa.sample(frac=cmdlsample).copy()
+    print('# of components {:2d}'.format(cmdlncomponents))
     if cmdlcolsrange:
         print('Attrib From col# %d to col %d' %(cmdlcolsrange[0],cmdlcolsrange[1]))
         swax = swaxx[swaxx.columns[cmdlcolsrange[0]: cmdlcolsrange[1]+1]]
@@ -4970,7 +4971,7 @@ def process_umap(cmdlallattribcsv,
 
     xyzc = swaxx[swaxx.columns[cmdlxyzcols]].copy()
 
-    clustering = umap.UMAP(n_neighbors=5, min_dist=0.3, n_components=3)
+    clustering = umap.UMAP(n_neighbors=cmdlnneighbors, min_dist=cmdlmindistance, n_components=cmdlncomponents)
 
     start_time = datetime.now()
     umap_features = clustering.fit_transform(swax)
@@ -4988,9 +4989,17 @@ def process_umap(cmdlallattribcsv,
         pdfcl = os.path.join(dirsplit,fname) +"_umap.pdf"
     fig, ax = plt.subplots(figsize=(8,6))
 
-    ax.scatter(umap_features[:,0],umap_features[:,1],s=2,alpha=.2)
-    ax.scatter(umap_features[:,1],umap_features[:,2],s=2,alpha=.2)
-    ax.scatter(umap_features[:,2],umap_features[:,0],s=2,alpha=.2)
+    # counter = itertools.count()
+    # nclst = list(next(counter) for _ in range(cmdlncomponents))
+    nclst = [i for i in range(cmdlncomponents)]
+    pltvar = itertools.combinations(nclst,2)
+    pltvarlst = list(pltvar)
+    for i in range(len(pltvarlst)):
+        ax.scatter(umap_features[:,pltvarlst[i][0]],umap_features[:,pltvarlst[i][1]],s=2,alpha=.2)
+
+        # ax.scatter(umap_features[:,0],umap_features[:,1],s=2,alpha=.2)
+        # ax.scatter(umap_features[:,1],umap_features[:,2],s=2,alpha=.2)
+        # ax.scatter(umap_features[:,2],umap_features[:,0],s=2,alpha=.2)
 
     if not cmdlhideplot:
         plt.show()
@@ -4998,19 +5007,29 @@ def process_umap(cmdlallattribcsv,
 
     umapscaled = StandardScaler().fit_transform(umap_features)
     if cmdlscalefeatures:
-        swaxx['umap0s'] = umapscaled[:,0]
-        swaxx['umap1s'] = umapscaled[:,1]
-        swaxx['umap2s'] = umapscaled[:,2]
-        xyzc['umap0s'] =   umapscaled[:,0]
-        xyzc['umap1s'] =   umapscaled[:,1]
-        xyzc['umap2s'] =   umapscaled[:,2]
+        for i in range(cmdlncomponents):
+            cname = 'umap'+ str(i)+'s'
+            swaxx[cname] = umapscaled[:,i]
+            xyzc[cname] = umapscaled[:,i]
+
+            # swaxx['umap0s'] = umapscaled[:,0]
+            # swaxx['umap1s'] = umapscaled[:,1]
+            # swaxx['umap2s'] = umapscaled[:,2]
+            # xyzc['umap0s'] =   umapscaled[:,0]
+            # xyzc['umap1s'] =   umapscaled[:,1]
+            # xyzc['umap2s'] =   umapscaled[:,2]
     else:
-        swaxx['umap0'] = umap_features[:,0]
-        swaxx['umap1'] = umap_features[:,1]
-        swaxx['umap2'] = umap_features[:,2]
-        xyzc['umap0'] =  umap_features[:,0]
-        xyzc['umap1'] =  umap_features[:,1]
-        xyzc['umap2'] =  umap_features[:,2]
+        for i in range(cmdlncomponents):
+            cname = 'umap'+ str(i)
+            swaxx[cname] = umap_features[:,i]
+            xyzc[cname] = umap_features[:,i]
+
+            # swaxx['umap0'] = umap_features[:,0]
+            # swaxx['umap1'] = umap_features[:,1]
+            # swaxx['umap2'] = umap_features[:,2]
+            # xyzc['umap0'] =  umap_features[:,0]
+            # xyzc['umap1'] =  umap_features[:,1]
+            # xyzc['umap2'] =  umap_features[:,2]
 
     savefiles(seisf = cmdlallattribcsv,
                 sdf = swaxx, sxydf = xyzc,
