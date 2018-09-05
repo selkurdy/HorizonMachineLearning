@@ -4955,7 +4955,7 @@ def process_umap(cmdlallattribcsv,
                 cmdlnneighbors=None,
                 cmdlmindistance=0.3,
                 cmdlncomponents=3,
-                cmdlscalefeatures =True,
+                cmdlscalefeatures =False,
                 cmdloutdir=None,
                 cmdlhideplot=None):
 
@@ -4984,18 +4984,20 @@ def process_umap(cmdlallattribcsv,
     dirsplit,fextsplit= os.path.split(cmdlallattribcsv)
     fname,fextn= os.path.splitext(fextsplit)
     if cmdloutdir:
-        pdfcl = os.path.join(cmdloutdir,fname) +"_umap.pdf"
+        pdfcl = os.path.join(cmdloutdir,fname) +"_umapnc%d.pdf" %(cmdlncomponents)
     else:
-        pdfcl = os.path.join(dirsplit,fname) +"_umap.pdf"
+        pdfcl = os.path.join(dirsplit,fname) +"_umapnc%d.pdf" %(cmdlncomponents)
     fig, ax = plt.subplots(figsize=(8,6))
 
-    # counter = itertools.count()
-    # nclst = list(next(counter) for _ in range(cmdlncomponents))
     nclst = [i for i in range(cmdlncomponents)]
     pltvar = itertools.combinations(nclst,2)
     pltvarlst = list(pltvar)
     for i in range(len(pltvarlst)):
-        ax.scatter(umap_features[:,pltvarlst[i][0]],umap_features[:,pltvarlst[i][1]],s=2,alpha=.2)
+        ftr0 = pltvarlst[i][0]
+        ftr1 = pltvarlst[i][1]
+        print('umap feature #: {}, umap feature #: {}'.format(ftr0,ftr1))
+        # ax.scatter(umap_features[:,pltvarlst[i][0]],umap_features[:,pltvarlst[i][1]],s=2,alpha=.2)
+        ax.scatter(umap_features[:,ftr0],umap_features[:,ftr1],s=2,alpha=.2)
 
         # ax.scatter(umap_features[:,0],umap_features[:,1],s=2,alpha=.2)
         # ax.scatter(umap_features[:,1],umap_features[:,2],s=2,alpha=.2)
@@ -5005,8 +5007,8 @@ def process_umap(cmdlallattribcsv,
         plt.show()
     fig.savefig(pdfcl)
 
-    umapscaled = StandardScaler().fit_transform(umap_features)
     if cmdlscalefeatures:
+        umapscaled = StandardScaler().fit_transform(umap_features)
         for i in range(cmdlncomponents):
             cname = 'umap'+ str(i)+'s'
             swaxx[cname] = umapscaled[:,i]
@@ -5034,7 +5036,7 @@ def process_umap(cmdlallattribcsv,
     savefiles(seisf = cmdlallattribcsv,
                 sdf = swaxx, sxydf = xyzc,
                 outdir = cmdloutdir,
-                ssuffix ='_umap')
+                ssuffix ='_umapnc%d' % (cmdlncomponents))
 
 
 
@@ -5850,8 +5852,8 @@ def getcommandline(*oneline):
     umapparser.add_argument('--mindistance',type=float,default=0.3,help='Min distantce for clustering. default=0.3')
     umapparser.add_argument('--ncomponents',type=int,default=3,help='Projection axes. default=3')
     umapparser.add_argument('--sample',type=float,default=1,help='fraction of data of sample 0 -> 1.default=1, no sampling')
-    umapparser.add_argument('--scalefeatures',action='store_false',default=True,
-                    help='Do not scale umap features. default = to scale featues')
+    umapparser.add_argument('--scalefeatures',action='store_true',default=False,
+                    help='Do not scale umap features. default = not to scale featues')
     umapparser.add_argument('--outdir',help='output directory,default= same dir as input')
     umapparser.add_argument('--hideplot',action='store_true',default=False,
                         help='Only save to pdf. default =show and save')
