@@ -2759,7 +2759,7 @@ def process_ANNRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
     if cmdlgeneratesamples:
         Xoriginal = X.copy()
         yoriginal = y.copy()
-        X,y = gensamples(X,y,nsamples = cmdlgeneratesamples,kind='r',func='svr')
+        X,y = gensamples(X,y,nsamples = cmdlgeneratesamples,kind='r',func='ann')
 
     ssa = pd.read_csv(cmdlseisattribcsv)
     ssxyz = ssa[ssa.columns[cmdlsaxyzcols]].copy()
@@ -4475,8 +4475,8 @@ def process_GaussianMixtureModel(cmdlwellattribcsv,cmdlseisattribcsv,
 
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlcatcol :
-        collabels = pd.get_dummies(w.iloc[:,cmdlcatcol],drop_first=True)
-        swa.drop(swa.columns[cmdl.catcol],axis = 1,inplace=True)
+        collabels = pd.get_dummies(swa.iloc[:,cmdlcatcol],drop_first=True)
+        swa.drop(swa.columns[cmdlcatcol],axis = 1,inplace=True)
         swa = pd.concat([swa,collabels],axis=1)
         cmdlwcolsrange[1] += collabels.shape[1]
     if cmdlwcolsrange:
