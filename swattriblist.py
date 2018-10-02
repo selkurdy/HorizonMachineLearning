@@ -1381,7 +1381,7 @@ def process_linreg(cmdlallattribcsv,cmdlwtargetcol=None,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]]].columns
     else:
@@ -1405,21 +1405,19 @@ def process_linreg(cmdlallattribcsv,cmdlwtargetcol=None,
 
     # Calculating coefficients
     cflst = lm.coef_.tolist()
-    #cflst.append(lm.intercept_)
+    # cflst.append(lm.intercept_)
     cflst.insert(0,lm.intercept_)
     cnameslst = colnames.tolist()
-    #cnameslst.append('Intercept')
+    # cnameslst.append('Intercept')
     cnameslst.insert(0,'Intercept')
     coeff = pd.DataFrame(cnameslst,columns=['Attribute'])
     coeff['Coefficient Estimate'] = pd.Series(cflst)
-
-
     pred = lm.predict(X)
 
     if cmdlminmaxscale:
         ymin,ymax = y.min(), y.max()
         mmscale = MinMaxScaler((ymin,ymax))
-        #mmscale.fit(pred)
+        # mmscale.fit(pred)
         pred1 = pred.reshape(-1,1)
         predscaled = mmscale.fit_transform(pred1)
         swa['LRPred'] = predscaled
@@ -1439,28 +1437,27 @@ def process_linreg(cmdlallattribcsv,cmdlwtargetcol=None,
     swa['Predict'] = pred
     swa['Prederr'] = pred - y
 
+    savefiles(seisf=cmdlallattribcsv,
+        sdf=swa, sxydf=swxyz,
+        wellf=cmdlallattribcsv,
+        wdf=coeff, wxydf=coeff,
+        outdir=cmdloutdir,
+        ssuffix='_lr',
+        wsuffix='_lrcf')
 
-    savefiles(seisf = cmdlallattribcsv,
-                sdf = swa, sxydf = swxyz,
-                wellf = cmdlallattribcsv,
-                wdf = coeff, wxydf = coeff,
-                outdir = cmdloutdir,
-                ssuffix ='_lr',
-                wsuffix = '_lrcf')
-
-def process_linfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
-                cmdlwcolsrange=None,cmdlwpredictorcols=None,
-                cmdlwtargetcol=None,cmdlsaxyzcols=None,
-                cmdlscolsrange=None,cmdlspredictorcols=None,
-                cmdlminmaxscale=None,cmdloutdir=None,
-                cmdlhideplot = False):
-
-
+def process_linfitpredict(cmdlwellattribcsv,
+    cmdlseisattribcsv,
+    cmdlwcolsrange=None,cmdlwpredictorcols=None,
+    cmdlwtargetcol=None,cmdlsaxyzcols=None,
+    cmdlscolsrange=None,cmdlspredictorcols=None,
+    cmdlminmaxscale=None,cmdloutdir=None,
+    cmdlhideplot=False):
+    """Perform linear fitting and prediction."""
     swa = pd.read_csv(cmdlwellattribcsv)
-    #print(swa.head(5))
+    # print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]]].columns
     else:
@@ -1470,14 +1467,12 @@ def process_linfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
     y = swa[swa.columns[cmdlwtargetcol]]
 
     ssa = pd.read_csv(cmdlseisattribcsv)
-    #New code
+    # New code
     ssxyz = ssa[ssa.columns[cmdlsaxyzcols]].copy()
-
 
     dirsplit,fextsplit= os.path.split(cmdlwellattribcsv)
     fname,fextn= os.path.splitext(fextsplit)
     #plt.style.use('seaborn-whitegrid')
-
 
     if cmdlscolsrange:
         print('Seismic Predictors From col# %d to col %d' %(cmdlscolsrange[0],cmdlscolsrange[1]))
@@ -1487,7 +1482,6 @@ def process_linfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
         print('Seismic Predictor cols',cmdlspredictorcols)
         Xpred = ssa[ssa.columns[cmdlspredictorcols]].values
         colnames = swa[swa.columns[cmdlspredictorcols]].columns
-
 
     lm = LinearRegression()
     lm.fit(X, y)  # Fitting all predictors 'X' to the target 'y' using linear fit model
@@ -1511,7 +1505,7 @@ def process_linfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
     if cmdlminmaxscale:
         ymin,ymax = y.min(), y.max()
         mmscale = MinMaxScaler((ymin,ymax))
-        #mmscale.fit(pred)
+        # mmscale.fit(pred)
         pred1 = pred.reshape(-1,1)
         predscaled = mmscale.fit_transform(pred1)
         ssa['LRPred'] = predscaled
@@ -1520,38 +1514,37 @@ def process_linfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
         ssa['LRPred'] = pred
         ssxyz['LRPred'] = pred
 
-
-    #ax =plt.scatter(y,ypred)
-    ax =sns.regplot(x=y,y=ypred)
+    # ax =plt.scatter(y,ypred)
+    ax = sns.regplot(x=y,y=ypred)
     plt.xlabel('Actual')
     plt.ylabel('Predicted')
     plt.title('Linear Regressor %s' %swa.columns[cmdlwtargetcol])
     if not cmdlhideplot:
         plt.show()
     if cmdloutdir:
-        pdfcl = os.path.join(cmdloutdir,fname) +"_lreg.pdf"
-        xyplt = os.path.join(cmdloutdir,fname) +"_lregxplt.csv"
+        pdfcl = os.path.join(cmdloutdir,fname) + "_lreg.pdf"
+        xyplt = os.path.join(cmdloutdir,fname) + "_lregxplt.csv"
     else:
-        pdfcl = os.path.join(dirsplit,fname) +"_lreg.pdf"
-        xyplt = os.path.join(dirsplit,fname) +"_lregxplt.csv"
+        pdfcl = os.path.join(dirsplit,fname) + "_lreg.pdf"
+        xyplt = os.path.join(dirsplit,fname) + "_lregxplt.csv"
     fig = ax.get_figure()
     fig.savefig(pdfcl)
     xpltcols =['Actual','Predicted']
-    xpltdf = swa.iloc[:,:3].copy()  #copy well x y
+    xpltdf = swa.iloc[:,:3].copy()  # copy well x y
     xpltdf['Actual'] = y
     xpltdf['Predicted'] = ypred
     xpltdf.to_csv(xyplt,index=False)
     print('Sucessfully generated xplot file %s'  % xyplt)
 
-
-
-    savefiles(seisf = cmdlseisattribcsv,
-                sdf = ssa, sxydf = ssxyz,
-                wellf = cmdlseisattribcsv,
-                wdf = coeff, wxydf = coeff,
-                outdir = cmdloutdir,
-                ssuffix ='_lr',
-                wsuffix = '_lrcf',name2merge =cmdlwellattribcsv)
+    savefiles(seisf=cmdlseisattribcsv,
+        sdf=ssa, sxydf=ssxyz,
+        wellf=cmdlseisattribcsv,
+        wdf=coeff,
+        wxydf=coeff,
+        outdir=cmdloutdir,
+        ssuffix='_lr',
+        wsuffix='_lrcf',
+        name2merge=cmdlwellattribcsv)
 
 
 def process_KNNfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
@@ -1564,17 +1557,17 @@ def process_KNNfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
                 cmdlkneighbors=None,
                 cmdlminmaxscale=None,
                 cmdloutdir=None,
-                cmdlgeneratesamples = None,
-                cmdlradius= None,
-                cmdlinterpolate = 'idw', #hard coded interpolation method
-                cmdlhideplot = False):
+                cmdlgeneratesamples=None,
+                cmdlradius=None,
+                cmdlinterpolate='idw',  # hard coded interpolation method
+                cmdlhideplot=False):
 
     swa = pd.read_csv(cmdlwellattribcsv)
-    #print(swa.head(5))
+    # print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
-        X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
+        print('Well Predictors From col# %d to col %d' % (cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
+        X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1] + 1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]]].columns
     else:
         print('Well Predictor cols',cmdlwpredictorcols)
@@ -1582,24 +1575,21 @@ def process_KNNfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
         colnames = swa[swa.columns[cmdlwpredictorcols]].columns
     y = swa[swa.columns[cmdlwtargetcol]]
 
-
     if cmdlgeneratesamples:
         Xoriginal = X.copy()
         yoriginal = y.copy()
-        X,y = gensamples(X,y,nsamples = cmdlgeneratesamples,kind='r',func='svr')
-
+        X,y = gensamples(X,y,nsamples=cmdlgeneratesamples,kind='r',func='svr')
 
     ssa = pd.read_csv(cmdlseisattribcsv)
     ssxyz = ssa[ssa.columns[cmdlsaxyzcols]].copy()
 
-
-    dirsplit,fextsplit= os.path.split(cmdlwellattribcsv)
-    fname,fextn= os.path.splitext(fextsplit)
+    dirsplit,fextsplit = os.path.split(cmdlwellattribcsv)
+    fname,fextn = os.path.splitext(fextsplit)
     plt.style.use('seaborn-whitegrid')
 
     if cmdlscolsrange:
-        print('Seismic Predictors From col# %d to col %d' %(cmdlscolsrange[0],cmdlscolsrange[1]))
-        Xpred = ssa[ssa.columns[cmdlscolsrange[0]: cmdlscolsrange[1]+1]].values
+        print('Seismic Predictors From col# %d to col %d' % (cmdlscolsrange[0],cmdlscolsrange[1]))
+        Xpred = ssa[ssa.columns[cmdlscolsrange[0]: cmdlscolsrange[1] + 1]].values
         colnames = ssa[ssa.columns[cmdlscolsrange[0]: cmdlscolsrange[1]]].columns
     else:
         print('Seismic Predictor cols',cmdlspredictorcols)
@@ -1637,7 +1627,7 @@ def process_KNNfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
         ssa['KNNPred'] = pred
         ssxyz['KNNPred'] = pred
 
-    #ax =plt.scatter(y,ypred)
+    # ax =plt.scatter(y,ypred)
     # sns.set(color_codes=True)
     # ax =sns.regplot(x=y,y=ypred)
 
@@ -1647,8 +1637,6 @@ def process_KNNfitpredict(cmdlwellattribcsv,cmdlseisattribcsv,
     yvi0 = np.polyval(qc0,xvi)
     plt.scatter(y,ypred,alpha=0.5,c='b',label='Model Predicted')
     plt.plot(xvi,yvi0,c='k',lw=2)
-
-
 
     ax.annotate('Model = %-.*f * Actual + %-.*f' %
             (2,qc0[0],2,qc0[1]),xy =(xvi[0],yvi0[0]),xytext=(0.14,0.85),
@@ -1782,7 +1770,7 @@ def process_TuneCatBoostRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -1901,7 +1889,7 @@ def process_NuSVR(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -2163,7 +2151,7 @@ def process_SGDR(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -2411,7 +2399,7 @@ def process_CatBoostRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -2746,7 +2734,7 @@ def process_ANNRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -3009,7 +2997,7 @@ def process_CatBoostClassifier(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -3273,7 +3261,7 @@ def process_TuneCatBoostClassifier(cmdlwellattribcsv,cmdlseisattribcsv,
     #print(swa.head(5))
     print('Well Target: %d ' % cmdlwtargetcol)
     if cmdlwcolsrange:
-        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well Predictors From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -3337,8 +3325,8 @@ def process_TuneCatBoostClassifier(cmdlwellattribcsv,cmdlseisattribcsv,
     print('All Data Accuracy Score: %10.4f' % accuracy_score(y,wpred))
     print('Log Loss: %10.4f' %log_loss(y,wproba))
 
-    #[(ssa[probacolnames[i]] = allprob[:,i]) for i in range(cmd.qcut)]
-    #add class column before probabilities
+    # [(ssa[probacolnames[i]] = allprob[:,i]) for i in range(cmd.qcut)]
+    # add class column before probabilities
     ssa['TunedCatBoost'] = y_clf
     ssxyz['TunedCatBoost'] = y_clf
     for i in range(cmdlqcut):
@@ -3425,7 +3413,7 @@ def process_logisticreg(cmdlwellattribcsv,cmdlseisattribcsv,
     #skip cross validation if data is less than cvalmin
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlwcolsrange:
-        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -3684,7 +3672,7 @@ def process_GaussianNaiveBayes(cmdlwellattribcsv,cmdlseisattribcsv,
     #skip cross validation if data is less than cvalmin
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlwcolsrange:
-        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -3935,7 +3923,7 @@ def process_QuadraticDiscriminantAnalysis(cmdlwellattribcsv,cmdlseisattribcsv,
     #skip cross validation if data is less than cvalmin
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlwcolsrange:
-        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -4204,7 +4192,7 @@ def process_NuSVC(cmdlwellattribcsv,cmdlseisattribcsv,
     #skip cross validation if data is less than cvalmin
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlwcolsrange:
-        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -4480,7 +4468,7 @@ def process_GaussianMixtureModel(cmdlwellattribcsv,cmdlseisattribcsv,
         swa = pd.concat([swa,collabels],axis=1)
         cmdlwcolsrange[1] += collabels.shape[1]
     if cmdlwcolsrange:
-        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].values
         colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]].columns
     else:
@@ -4829,7 +4817,7 @@ def process_tSNE2(cmdlwellattribcsv,cmdlseisattribcsv,
 
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlwcolsrange:
-        print('Attrib From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
+        print('Attrib From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1] + 1))
         swax = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]+1]]
     else:
         swax = swa[swaxx.columns[cmdlwpredictorcols]]
