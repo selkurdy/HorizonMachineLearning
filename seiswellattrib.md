@@ -73,7 +73,7 @@ optional arguments:
   
 ```
 
-The program is designed with an outer main shell that has numerous subprogram to run various ML functionalities like exploratory data analysis, regression and classification.  
+The program is designed with an outer main shell that has numerous subprograms to run various ML functionalities like exploratory data analysis, regression classification, semi supervised classification, and data generation.  
 
 Classification is a bit restrictive, because it assumes the input target is all numeric and it cuts the set to any number of classes. The default is 3 classes.   
 
@@ -81,7 +81,7 @@ The starting point is generating attributes from the interpretation workstation 
 
 The window length should be calculated in accordance with the expected reservoir thickness.  
 
-Once he attributes are generated then each one is exported to a flat ASCII fiel with x y and value columns. The file can have header lines and/or more columns. The assumption is that all exported attributes will have the same dimensions.  
+Once the attributes are generated then each one is exported to a flat ASCII fiel with x y and value columns. The file can have header lines and/or more columns. The assumption is that all exported attributes will have the same dimensions.  
 
 Generate a text file with the list of the exported attributes making sure that the first file is the two way time (or depth) of that horizon. This is needed to be able to import back the results of *__seiswellattrib.py__* into Petrel.
 
