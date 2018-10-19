@@ -259,7 +259,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import NuSVR
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics import log_loss
 from sklearn.metrics import accuracy_score,classification_report
@@ -3054,23 +3054,23 @@ def process_ANNRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
             ssuffix='_ANNR',name2merge=cmdlwellattribcsv)
 
 def process_testCmodels(cmdlwellattribcsv,
-    cmdlwcolsrange=None,
-    cmdlwanalysiscols=None,
-    cmdlwtargetcol=None,
-    cmdlqcut=None,
-    cmdlcv=None,
-    cmdloutdir=None,
-    cmdlhideplot=None):
+        cmdlwcolsrange=None,
+        cmdlwanalysiscols=None,
+        cmdlwtargetcol=None,
+        cmdlqcut=None,
+        cmdlcv=None,
+        cmdloutdir=None,
+        cmdlhideplot=None):
     """test various classification models."""
     swa = pd.read_csv(cmdlwellattribcsv)
     if cmdlwcolsrange:
         print('Well From col# %d to col %d' %(cmdlwcolsrange[0],cmdlwcolsrange[1]))
         X = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]]].values
-        colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]]].columns
+        # colnames = swa[swa.columns[cmdlwcolsrange[0]: cmdlwcolsrange[1]]].columns
     else:
         print('Well analysis cols',cmdlwanalysiscols)
         X = swa[swa.columns[cmdlwanalysiscols]].values
-        colnames = swa[swa.columns[cmdlwanalysiscols]].columns
+        # colnames = swa[swa.columns[cmdlwanalysiscols]].columns
 
     probacolnames = ['Class%d' % i for i in range(cmdlqcut)]
     swa['qa'],qbins = pd.qcut(swa[swa.columns[cmdlwtargetcol]],cmdlqcut,labels=probacolnames,retbins=True)
@@ -3081,12 +3081,12 @@ def process_testCmodels(cmdlwellattribcsv,
     print(qcount)
 
     models = []
-    models.append(( ' LR ' , LogisticRegression()))
-    models.append(( ' LDA ' , LinearDiscriminantAnalysis()))
-    models.append(( ' KNN ' , KNeighborsClassifier()))
-    models.append(( ' CART ' , DecisionTreeClassifier()))
-    models.append(( ' NB ' , GaussianNB()))
-    models.append(( ' SVM ' , SVC()))
+    models.append((' LR ', LogisticRegression()))
+    models.append((' LDA ', LinearDiscriminantAnalysis()))
+    models.append((' KNN ', KNeighborsClassifier()))
+    models.append((' CART ', DecisionTreeClassifier()))
+    models.append((' NB ', GaussianNB()))
+    models.append((' SVM ', SVC()))
     # evaluate each model in turn
     results = []
     names = []
@@ -3099,19 +3099,18 @@ def process_testCmodels(cmdlwellattribcsv,
         results.append(cv_results)
         names.append(name)
         msg = "Model: %s: Mean Accuracy: %0.4f Std: (%0.4f)" % (name, cv_results.mean(), cv_results.std())
-        #print (msg)
+        # print (msg)
         resultsmean.append(cv_results.mean())
         resultsstd.append(cv_results.std())
     modeltest = pd.DataFrame(list(zip(names,resultsmean,resultsstd)),columns=['Model','Model Mean Accuracy','Accuracy STD'])
     print(modeltest)
 
-    dirsplit,fextsplit = os.path.split(cmdl.wellattribcsv)
+    dirsplit,fextsplit = os.path.split(cmdlwellattribcsv)
     fname,fextn = os.path.splitext(fextsplit)
     if cmdloutdir:
         pdfcl = os.path.join(cmdloutdir,fname) + "_testcm.pdf"
     else:
         pdfcl = os.path.join(dirsplit,fname) + "_testcm.pdf"
-
 
     # boxplot algorithm comparison
     fig = plt.figure()
@@ -3123,29 +3122,26 @@ def process_testCmodels(cmdlwellattribcsv,
     if not cmdlhideplot:
         plt.show()
 
-
-
-
 def process_CatBoostClassifier(cmdlwellattribcsv,cmdlseisattribcsv,
-                cmdlwcolsrange=None,
-                cmdlwpredictorcols=None,
-                cmdlwtargetcol=None,
-                cmdlsaxyzcols=None,
-                cmdlscolsrange=None,
-                cmdlspredictorcols=None,
-                cmdlwellsxyzcols=None,
-                cmdlcoded=None,
-                cmdlminmaxscale=None,
-                cmdloutdir=None,
-                cmdliterations=None,
-                cmdllearningrate=None,
-                cmdldepth=None,cmdlqcut=None,
-                cmdlcv=None,
-                cmdlfeatureimportance=False,
-                cmdlgeneratesamples=None,
-                cmdlbalancetype=None,
-                cmdlnneighbors=None,
-                cmdlvalsize=0.3,cmdlhideplot=False):
+        cmdlwcolsrange=None,
+        cmdlwpredictorcols=None,
+        cmdlwtargetcol=None,
+        cmdlsaxyzcols=None,
+        cmdlscolsrange=None,
+        cmdlspredictorcols=None,
+        cmdlwellsxyzcols=None,
+        cmdlcoded=None,
+        cmdlminmaxscale=None,
+        cmdloutdir=None,
+        cmdliterations=None,
+        cmdllearningrate=None,
+        cmdldepth=None,cmdlqcut=None,
+        cmdlcv=None,
+        cmdlfeatureimportance=False,
+        cmdlgeneratesamples=None,
+        cmdlbalancetype=None,
+        cmdlnneighbors=None,
+        cmdlvalsize=0.3,cmdlhideplot=False):
     """***************CatBoostClassifier."""
     cvalmin = 20
     # skip cross validation if data is less than cvalmin
@@ -3189,8 +3185,6 @@ def process_CatBoostClassifier(cmdlwellattribcsv,cmdlseisattribcsv,
         swxyz['qcodes'] = swa['qcodes']
 
     if cmdlgeneratesamples:
-        # yoriginal = y.copy()
-        # Xoriginal = X.copy()
         X,y = gensamples(X,y,nsamples=cmdlgeneratesamples,kind='c',func='svc')
 
     resampled = False
@@ -4622,7 +4616,8 @@ def process_clustering(cmdlallattribcsv,cmdlcolsrange=None,
         cmdlcols2cluster=None,
         cmdlnclusters=None,
         cmdlplotsilhouette=False,
-        cmdlsample=None,cmdlxyzcols=None,
+        cmdlsample=None,
+        cmdlxyzcols=None,
         cmdladdclass=None,
         cmdloutdir=None,
         cmdlhideplot=False):
@@ -4633,6 +4628,7 @@ def process_clustering(cmdlallattribcsv,cmdlcolsrange=None,
         swax = swa[swa.columns[cmdlcolsrange[0]: cmdlcolsrange[1] + 1]]
     else:
         swax = swa[swa.columns[cmdlcols2cluster]]
+
     clustering = KMeans(n_clusters=cmdlnclusters,
         n_init=5,
         max_iter=300,
@@ -4643,10 +4639,10 @@ def process_clustering(cmdlallattribcsv,cmdlcolsrange=None,
     print('nlabels',nlabels)
 
     if cmdladdclass == 'labels':
-        swa['Class'] = ylabels
+        swa['Cluster'] = ylabels
     elif cmdladdclass == 'dummies':
         classlabels = pd.Series(ylabels)
-        classdummies = pd.get_dummies(classlabels,prefix='Class')
+        classdummies = pd.get_dummies(classlabels,prefix='Cluster')
         swa = pd.concat([swa,classdummies],axis=1)
     print(swa.shape)
 
