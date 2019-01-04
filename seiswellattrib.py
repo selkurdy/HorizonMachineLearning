@@ -218,8 +218,11 @@ python swattriblist.py tSNE wattrib.csv --colsrange 4 16 --sample 1 --hideplot -
 
 python swattriblist.py tSNE2 wattrib.csv sattrib.csv  --wcolsrange 4 16 --scolsrange 3 15 --sample 0.005
 
-D:\sekData\OriginalData\sekdata\Tukau Timur\horizons\Mar29>python swattriblist0.py tSNE2 H763_sus_ss_H763_swa.csv H763_sus_ss.csv --scolsrange 3 8 --w
-colsrange 4 9 --sample 0.05
+python swattriblist0.py tSNE2 H763_sus_ss_H763_swa.csv H763_sus_ss.csv --scolsrange 3 8 --wcolsrange 4 9 --sample 0.05
+
+python seiswellattrib.py CatBoostRegressor seis_sus_ss_UL30_wellpp_por_swa.csv seis_sus_ss.csv --wcolsrange 4 56 --scolsrange 3 55  --depth 6 --featureimportance
+
+python seiswellattrib.py CatBoostRegressor seis_sus_ss_UL30_wellpp_por_swa.csv seis_sus_ss.csv --wcolsrange 4 56 --scolsrange 3 55  --depth 6 --featureimportance --importancelevel 2
 
 '''
 import os.path
@@ -2226,7 +2229,7 @@ def process_NuSVR(cmdlwellattribcsv,
             if not cmdlhideplot:
                 plt.show()
             if cmdloutdir:
-                pdfcl3 = os.path.join(cmdloutdir,fname) +"C%.1fnu%.1f" % (cmdlerrpenalty,cmdlnu) + "_nusvr2bx.pdf"
+                pdfcl3 = os.path.join(cmdloutdir,fname) + "C%.1fnu%.1f" % (cmdlerrpenalty,cmdlnu) + "_nusvr2bx.pdf"
             else:
                 pdfcl3 = os.path.join(dirsplit,fname) + "C%.1fnu%.1f" % (cmdlerrpenalty,cmdlnu) + "_nusvr2bx.pdf"
             fig = ax.get_figure()
@@ -2492,6 +2495,7 @@ def process_CatBoostRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
                 cmdlcv=None,
                 cmdlscaleminmaxvalues=None,
                 cmdlfeatureimportance=None,
+                cmdlimportancelevel=None,
                 cmdlgeneratesamples=None,
                 cmdlhideplot=False,
                 cmdlvalsize=0.3,
@@ -2537,29 +2541,53 @@ def process_CatBoostRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
 
     if cmdlfeatureimportance:
         model = CatBoostRegressor(iterations=cmdliterations, learning_rate=cmdllearningrate,
-                    depth=cmdldepth,loss_function='RMSE',calc_feature_importance=True,random_seed=42)
+                    depth=cmdldepth,loss_function='RMSE',calc_feature_importance=True,
+                    random_seed=42,logging_level='Silent')
         model.fit(X, y)
         fr = pd.DataFrame(sorted(zip(model.get_feature_importance(X,y), colnames),reverse=True),columns=['Importance','Attribute'])
-        print('Feature Ranking with CatBoostRegressor: ')
-        print(fr)
+        if cmdloutdir:
+            fifname = os.path.join(cmdloutdir,fname) + f"_fi{cmdlimportancelevel:.1f}.csv"
+            fislctfname = os.path.join(cmdloutdir,fname) + f"_fislct{cmdlimportancelevel:.1f}.csv"
+        else:
+            fifname = os.path.join(dirsplit,fname) + f"_fi{cmdlimportancelevel:.1f}.csv"
+            fislctfname = os.path.join(dirsplit,fname) + f"_fislct{cmdlimportancelevel:.1f}.csv"
+
+        # fr.to_csv(fifname,index=False)
+        fr.to_csv(fifname)
+        # intentionally save feature importance file with column #
+        print(f'Successfully generated Feature Importance file {fifname}')
+        if cmdlnofilesout:
+            print('Selected features will not be saved with --nofilesout option')
+        else:
+            frx = fr[fr['Importance'] > cmdlimportancelevel]
+            frxcols = swa.columns[:5].tolist() + frx.Attribute.tolist() + [swa.columns[-1]]
+            # Well X Y Z + selected attributes + target col
+            print(f'# of features retained: {len(frx.Attribute.tolist())}')
+            swafi = swa[frxcols].copy()
+            # targetname = swa.columns[-1]
+            # swafi[targetname] = y
+            swafi.to_csv(fislctfname,index=False)
+            print(f'Successfully generated selected features file {fislctfname}')
+            # print('Feature Ranking with CatBoostRegressor: ')
+            # print(fr)
 
         plt.style.use('seaborn-whitegrid')
-        ax = fr['Importance'].plot(kind='bar', figsize=(12,8))
-        ax.set_xticklabels(fr['Attribute'],rotation=45)
+        ax = frx['Importance'].plot(kind='bar', figsize=(12,8))
+        ax.set_xticklabels(frx['Attribute'],rotation=45)
         ax.set_ylabel('Feature Importance')
         ax.set_title('CatBoostRegressor Feature Importance of %s' % cmdlwellattribcsv)
         if not cmdlhideplot:
             plt.show()
         if cmdloutdir:
-            pdfcl = os.path.join(cmdloutdir,fname) + "_cbrfi.pdf"
+            pdfcl = os.path.join(cmdloutdir,fname) + f"_cbrfi{cmdlimportancelevel:.1f}.pdf"
         else:
-            pdfcl = os.path.join(dirsplit,fname) + "_cbrfi.pdf"
+            pdfcl = os.path.join(dirsplit,fname) + f"_cbrfi{cmdlimportancelevel:.1f}.pdf"
         fig = ax.get_figure()
         fig.savefig(pdfcl)
 
     elif cmdlcv:
         model = CatBoostRegressor(iterations=cmdliterations, learning_rate=cmdllearningrate,
-                    depth=cmdldepth,loss_function='RMSE',random_seed=42)
+                    depth=cmdldepth,loss_function='RMSE',random_seed=42,logging_level='Silent')
         cvscore = cross_val_score(model,X,y,cv=cmdlcv,scoring='r2')
         # print("Mean Score: {:10.4f}".format(np.mean(cvscore)))
         print("Mean Score R2: %10.4f" % (np.mean(cvscore[0])))
@@ -2580,7 +2608,7 @@ def process_CatBoostRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
                     od_type='IncToDec',
                     od_pval=cmdlodpval,
                     eval_metric='RMSE',
-                    random_seed=42)
+                    random_seed=42,logging_level='Silent')
 
         # Fit model
         model.fit(X, y,eval_set=evalset)
@@ -2597,7 +2625,7 @@ def process_CatBoostRegressor(cmdlwellattribcsv,cmdlseisattribcsv,
         print('No files will be generated. Re-run without overfittingdetection')
     else:
         model = CatBoostRegressor(iterations=cmdliterations, learning_rate=cmdllearningrate,
-                depth=cmdldepth,loss_function='RMSE',random_seed=42)
+                depth=cmdldepth,loss_function='RMSE',random_seed=42,logging_level='Silent')
         # Fit model
         model.fit(X, y)
         # Get predictions
@@ -5473,6 +5501,8 @@ def getcommandline(*oneline):
     cbrparser.add_argument('--cv',type=int,default=None,help='Cross Validate. default=None.')
     cbrparser.add_argument('--featureimportance',action='store_true',default=False,
         help='List feature importance.default= False')
+    cbrparser.add_argument('--importancelevel',type=float,default=0.0,
+        help='Select features with higher importance level.default=0 i.e. keep all features')
     cbrparser.add_argument('--generatesamples',type=int,default=0,
         help='Use GMM to generate samples. Use when you have small # of data to model from.default = 0')
     cbrparser.add_argument('--nofilesout',action='store_true',default=False,
@@ -6015,6 +6045,7 @@ def main():
                 cmdldepth=cmdl.depth,
                 cmdlcv=cmdl.cv,
                 cmdlfeatureimportance=cmdl.featureimportance,
+                cmdlimportancelevel=cmdl.importancelevel,
                 cmdlhideplot=cmdl.hideplot,
                 cmdlgeneratesamples=cmdl.generatesamples,
                 cmdlvalsize=cmdl.valsize,
@@ -6151,7 +6182,7 @@ def main():
                 cmdlclassweight=cmdl.classweight,
                 cmdlgeneratesamples=cmdl.generatesamples,
                 cmdlbalancetype=cmdl.balancetype,
-                cmdlnneighbors=mdl.nneighbors)
+                cmdlnneighbors=cmdl.nneighbors)
 
         elif cmdl.which == 'GaussianNaiveBayes':
             process_GaussianNaiveBayes(cmdl.wellattribcsv,cmdl.seisattribcsv,
